@@ -1561,8 +1561,12 @@
 
       showToast(`Memvalidasi barcode: ${code}...`, 'info');
 
+      const nowObj = new Date();
+      const localScanTime = String(nowObj.getHours()).padStart(2, '0') + ':' + String(nowObj.getMinutes()).padStart(2, '0');
+
       callGasApi('kadiv_scan_approve', {
         barcode: code,
+        scanTime: localScanTime,
         validatorName: 'Kadiv (Scan Barcode PWA)',
         validatorId: 'STF-KADIV'
       }, function(res) {
@@ -1583,7 +1587,9 @@
             statusBox.style.color = '#34d399';
           }
           if (spinner) spinner.className = 'bi bi-check-circle-fill text-success fs-5';
-          if (statusText) statusText.innerHTML = `<div><strong class="text-white">BERHASIL!</strong> ${escapeHtml(res.message || 'Presensi tervalidasi')}<div class="text-white-50" style="font-size: 11px;">Siap scan staf berikutnya...</div></div>`;
+          const jamMasuk = res.jamMasuk || localScanTime;
+          const shiftName = res.shiftName || 'Shift';
+          if (statusText) statusText.innerHTML = `<div><strong class="text-white">BERHASIL!</strong> ${escapeHtml(res.staffName || 'Staf')}<div class="text-white-50" style="font-size: 11.5px;">⏰ Masuk Kerja: <strong class="text-warning">${escapeHtml(jamMasuk)}</strong> (${escapeHtml(shiftName)}) • Siap scan berikutnya...</div></div>`;
 
           // Refresh data list di background tanpa tutup modal
           fetchKadivData(false);
