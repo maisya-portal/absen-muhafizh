@@ -1,11 +1,11 @@
-﻿{
+{
   "name": "Persetujuan Kadiv Tahfizh",
   "short_name": "Kadiv Absen",
   "description": "Portal Persetujuan Cepat & Barcode Scanner Absensi Muhafizh Kadiv Tahfizh Ponpes Imam Syafi'i",
   "start_url": "./index.html",
   "scope": "./",
   "display": "standalone",
-  "orientation": "portrait-primary",
+  "orientation": "any",
   "background_color": "#0f172a",
   "theme_color": "#10b981",
   "icons": [
