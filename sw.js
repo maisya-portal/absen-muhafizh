@@ -1,4 +1,4 @@
-﻿const CACHE_NAME = 'kadiv-tahfizh-pwa-v2.1';
+const CACHE_NAME = 'kadiv-tahfizh-pwa-v3.1';
 const ASSETS_TO_CACHE = [
   './',
   './index.html',
@@ -13,12 +13,12 @@ const ASSETS_TO_CACHE = [
 ];
 
 self.addEventListener('install', (event) => {
+  self.skipWaiting();
   event.waitUntil(
     caches.open(CACHE_NAME).then((cache) => {
       return cache.addAll(ASSETS_TO_CACHE).catch(err => console.log('PWA cache add error:', err));
     })
   );
-  self.skipWaiting();
 });
 
 self.addEventListener('activate', (event) => {
@@ -31,13 +31,12 @@ self.addEventListener('activate', (event) => {
           }
         })
       );
-    })
+    }).then(() => self.clients.claim())
   );
-  self.clients.claim();
 });
 
 self.addEventListener('fetch', (event) => {
-  // Untuk panggilan API ke Google Apps Script, selalu gunakan Network-First
+  // 1. API Calls ke GAS: Network Only / Network First
   if (event.request.url.includes('script.google.com') || event.request.url.includes('api=')) {
     event.respondWith(
       fetch(event.request).catch(() => {
@@ -49,14 +48,28 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // Untuk static assets, gunakan Cache First dengan fallback ke Network
+  // 2. HTML Document Navigation: Network-First (agar browser selalu memuat tampilan terbaru dari GitHub Pages)
+  if (event.request.mode === 'navigate' || event.request.destination === 'document' || event.request.url.endsWith('index.html') || event.request.url.endsWith('/')) {
+    event.respondWith(
+      fetch(event.request).then((networkResponse) => {
+        if (networkResponse && networkResponse.status === 200) {
+          const responseToCache = networkResponse.clone();
+          caches.open(CACHE_NAME).then((cache) => {
+            cache.put(event.request, responseToCache);
+          });
+        }
+        return networkResponse;
+      }).catch(() => caches.match(event.request))
+    );
+    return;
+  }
+
+  // 3. Static assets: Cache First dengan fallback ke Network
   event.respondWith(
     caches.match(event.request).then((cachedResponse) => {
-      if (cachedResponse) {
-        return cachedResponse;
-      }
+      if (cachedResponse) return cachedResponse;
       return fetch(event.request).then((networkResponse) => {
-        if (networkResponse && networkResponse.status === 200 && networkResponse.type === 'basic') {
+        if (networkResponse && networkResponse.status === 200) {
           const responseToCache = networkResponse.clone();
           caches.open(CACHE_NAME).then((cache) => {
             cache.put(event.request, responseToCache);
